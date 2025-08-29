@@ -1,21 +1,20 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 
-export const users = sqliteTable("users", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+	id: serial("id").primaryKey(),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
 	passwordHash: text("password_hash").notNull(),
 });
 
-export const tickets = sqliteTable("tickets", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
+export const tickets = pgTable("tickets", {
+	id: serial("id").primaryKey(),
 	userId: integer("user_id")
 		.notNull()
 		.references(() => users.id, { onDelete: "cascade" }),
 	title: text("title").notNull(),
 	description: text("description"),
-	createdAt: integer("created_at").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: false }).defaultNow().notNull(),
 });
 
 

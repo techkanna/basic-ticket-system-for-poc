@@ -15,7 +15,8 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
 	const id = Number(params.id);
 	if (Number.isNaN(id)) return notFound();
 
-	const ticket = db.select().from(tickets).where(and(eq(tickets.id, id), eq(tickets.userId, Number(user.sub)))).get();
+	const rows = await db.select().from(tickets).where(and(eq(tickets.id, id), eq(tickets.userId, Number(user.sub)))).limit(1);
+	const ticket = rows[0];
 	if (!ticket) return notFound();
 
 	return (

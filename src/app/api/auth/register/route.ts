@@ -16,17 +16,17 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: "name, email and password are required" }, { status: 400 });
 	}
 
-	const existing = db.select().from(users).where(eq(users.email, email)).get();
-	if (existing) {
+	const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+	if (existing.length > 0) {
 		return NextResponse.json({ error: "Email already registered" }, { status: 409 });
 	}
 
 	const passwordHash = await hashPassword(password);
-	const inserted = db
+	const insertedRows = await db
 		.insert(users)
 		.values({ name, email, passwordHash })
-		.returning()
-		.get();
+		.returning({ id: users.id, name: users.name, email: users.email });
+	const inserted = insertedRows[0]!;
 
 	const token = await createJwt({ sub: String(inserted.id), email: inserted.email, name: inserted.name });
 	const res = NextResponse.json({ user: { id: inserted.id, name: inserted.name, email: inserted.email }, token }, { status: 201 });

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 	const user = await getUserFromToken(token);
 	if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-	const list = db.select().from(tickets).where(eq(tickets.userId, Number(user.sub))).all();
+	const list = await db.select().from(tickets).where(eq(tickets.userId, Number(user.sub)));
 	return NextResponse.json({ tickets: list });
 }
 
@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
 	const description = String(body?.description ?? "").trim();
 	if (!title) return NextResponse.json({ error: "title is required" }, { status: 400 });
 
-	const created = db
+	const rows = await db
 		.insert(tickets)
-		.values({ userId: Number(user.sub), title, description, createdAt: Date.now() })
-		.returning()
-		.get();
+		.values({ userId: Number(user.sub), title, description })
+		.returning();
+	const created = rows[0]!;
 
 	return NextResponse.json({ ticket: created }, { status: 201 });
 }

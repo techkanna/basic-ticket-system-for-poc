@@ -11,12 +11,11 @@ export default async function TicketsPage() {
 	const user = await getUserFromToken(token);
 	if (!user) return null;
 
-	const list = db
+	const list = await db
 		.select()
 		.from(tickets)
 		.where(eq(tickets.userId, Number(user.sub)))
-		.orderBy(desc(tickets.createdAt))
-		.all();
+		.orderBy(desc(tickets.createdAt));
 
 	return (
 		<div className="max-w-3xl mx-auto p-6 space-y-6">
