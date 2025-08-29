@@ -30,8 +30,9 @@ export default function TicketForm() {
 			// setTimeout(() => {
 			// 	window.location.href = "/tickets";
 			// }, 200);
-		} catch (err: any) {
-			setError(err.message || "Failed");
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Failed";
+			setError(message);
 		} finally {
 			setLoading(false);
 		}

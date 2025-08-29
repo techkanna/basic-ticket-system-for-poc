@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, getUserFromToken } from "@/lib/auth";
 import LogoutButton from "./_components/LogoutButton";
