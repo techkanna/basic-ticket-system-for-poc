@@ -27,4 +27,6 @@ jobs:
             --name ticket-poc \
             --restart unless-stopped \
             -p 3000:3000 \
+            -e DB_FILE_NAME=${{ secrets.DB_FILE_NAME }} \
+            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
             ticket-poc
