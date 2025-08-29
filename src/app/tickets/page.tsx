@@ -35,6 +35,7 @@ export default async function TicketsPage() {
 						<li key={t.id} className="p-4 flex items-center justify-between">
 							<div>
 								<p className="font-medium">{t.title}</p>
+								<p className="font-medium">{t.description}</p>
 								<p className="text-xs text-neutral-500">{new Date(t.createdAt).toLocaleString()}</p>
 							</div>
 							<Link href={`/tickets/${t.id}`} className="underline">View</Link>

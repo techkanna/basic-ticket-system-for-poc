@@ -6,8 +6,15 @@ import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
+function getAuthFromRequest(request: NextRequest) {
+	const cookieToken = request.cookies.get(COOKIE_NAME)?.value;
+	const authHeader = request.headers.get("authorization");
+	const bearer = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : undefined;
+	return bearer || cookieToken || null;
+}
+
 export async function GET(request: NextRequest) {
-	const token = request.cookies.get(COOKIE_NAME)?.value;
+	const token = getAuthFromRequest(request);
 	const user = await getUserFromToken(token);
 	if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -16,7 +23,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-	const token = request.cookies.get(COOKIE_NAME)?.value;
+	const token = getAuthFromRequest(request);
 	const user = await getUserFromToken(token);
 	if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

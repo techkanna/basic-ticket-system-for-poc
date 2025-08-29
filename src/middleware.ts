@@ -4,7 +4,12 @@ import { getUserFromToken, COOKIE_NAME } from "@/lib/auth";
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 	const token = request.cookies.get(COOKIE_NAME)?.value;
-	const user = await getUserFromToken(token);
+	const authHeader = request.headers.get("authorization");
+	let user = await getUserFromToken(token);
+	if (!user && authHeader?.toLowerCase().startsWith("bearer ")) {
+		const bearer = authHeader.slice(7).trim();
+		user = await getUserFromToken(bearer);
+	}
 
 	const isApi = pathname.startsWith("/api");
 	const isAuthPage = pathname === "/login" || pathname === "/register";

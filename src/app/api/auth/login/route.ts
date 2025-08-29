@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 	}
 
 	const token = await createJwt({ sub: String(user.id), email: user.email, name: user.name });
-	const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });
+	const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email }, token });
 	res.cookies.set({ name: COOKIE_NAME, value: token, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 7 });
 	return res;
 }
