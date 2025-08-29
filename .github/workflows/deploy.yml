@@ -1,0 +1,30 @@
+name: Deploy to Proxmox
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t ticket-poc .
+
+      - name: Stop existing container (if any)
+        run: |
+          docker stop ticket-poc || true
+          docker rm ticket-poc || true
+
+      - name: Run container
+        run: |
+          docker run -d \
+            --name ticket-poc \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            ticket-poc
