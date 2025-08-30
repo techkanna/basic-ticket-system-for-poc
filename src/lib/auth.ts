@@ -1,9 +1,10 @@
+import { env } from "@/data/env/server"
 import { SignJWT, jwtVerify, JWTPayload } from "jose";
 
 export const COOKIE_NAME = "auth_token";
 
 function getJwtSecret(): Uint8Array {
-	return new TextEncoder().encode(process.env.JWT_SECRET ?? "dev-secret");
+	return new TextEncoder().encode(env.JWT_SECRET ?? "dev-secret");
 }
 
 export type AppJwtPayload = JWTPayload & {

@@ -1,25 +1,26 @@
 version: "3.9"
 services:
   db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
+    image: postgres:17.0
+    hostname: ${DB_HOST}
     ports:
-      - "5432:5432"
+      - "5432:${DB_PORT}"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - pg_data:/var/lib/postgresql/data
-  web:
-    build: .
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://app:app@db:5432/app
-      NODE_ENV: production
-    ports:
-      - "3000:3000"
+  # web:
+  #   build: .
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URL: postgres://app:app@db:5432/app
+  #     NODE_ENV: production
+  #   ports:
+  #     - "3000:3000"
 volumes:
-  pg_data: {}
+  pg_data: #{}
 
 
