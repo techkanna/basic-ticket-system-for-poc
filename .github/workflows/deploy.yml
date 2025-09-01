@@ -28,6 +28,41 @@ jobs:
         run: |
           npm ci
 
+      - name: Ensure Docker network and Postgres
+        run: |
+          # Create user-defined network if it doesn't exist
+          docker network inspect helpdesk-net >/dev/null 2>&1 || docker network create helpdesk-net
+
+          # Create persistent volume for Postgres if it doesn't exist
+          docker volume inspect ticket-pg-data >/dev/null 2>&1 || docker volume create ticket-pg-data
+
+          # Create or start Postgres container and attach to network
+          if [ "$(docker ps -aq -f name=^ticket-pg$)" ]; then
+            docker start ticket-pg || true
+            docker network connect helpdesk-net ticket-pg 2>/dev/null || true
+          else
+            docker run -d \
+              --name ticket-pg \
+              --network helpdesk-net \
+              --restart unless-stopped \
+              -p 5432:5432 \
+              -v ticket-pg-data:/var/lib/postgresql/data \
+              -e POSTGRES_USER="$DB_USER" \
+              -e POSTGRES_PASSWORD="$DB_PASSWORD" \
+              -e POSTGRES_DB="$DB_NAME" \
+              postgres:17.0
+          fi
+
+          # Wait for Postgres to be ready
+          for i in {1..60}; do
+            if docker exec ticket-pg pg_isready -U "$DB_USER" >/dev/null 2>&1; then
+              echo "Postgres is ready"
+              break
+            fi
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+
       - name: Generate migrations (Drizzle)
         run: |
           npm run db:generate
@@ -52,13 +87,13 @@ jobs:
           docker run -d \
             --name ticket-poc \
             --restart unless-stopped \
+            --network helpdesk-net \
             -p 3000:3000 \
-            --add-host=host.docker.internal:host-gateway \
             -e NODE_ENV=production \
             -e JWT_SECRET="$JWT_SECRET" \
             -e DB_PASSWORD="$DB_PASSWORD" \
             -e DB_USER="$DB_USER" \
-            -e DB_HOST="host.docker.internal" \
+            -e DB_HOST="ticket-pg" \
             -e DB_PORT="$DB_PORT" \
             -e DB_NAME="$DB_NAME" \
             -e DB_SSL=false \
