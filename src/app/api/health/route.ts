@@ -6,34 +6,50 @@ import { sql } from "drizzle-orm";
 export const runtime = "nodejs";
 
 export async function GET() {
+	// Basic env presence (safe to expose booleans only)
+	const envCheck = {
+		nodeEnv: process.env.NODE_ENV ?? null,
+		jwt: process.env.JWT_SECRET ? true : false,
+		dbHost: process.env.DB_HOST ? true : false,
+		dbUser: process.env.DB_USER ? true : false,
+		dbName: process.env.DB_NAME ? true : false,
+		ssl: process.env.DB_SSL ?? null,
+	};
+
+	let dbConnected = false;
+	let dbError: string | null = null;
+	let countValue: number | null = null;
+
 	try {
-		// 1) Basic env presence
-		const envCheck = {
-			nodeEnv: process.env.NODE_ENV ?? null,
-			jwt: process.env.JWT_SECRET ? true : false,
-			dbUrl: process.env.DB_HOST ? "parts" : null,
-			ssl: process.env.DB_SSL ?? null,
-		};
-
-		// 2) DB connectivity and simple query
 		await db.execute(sql`select 1`);
-		const userCount = await db.select({ count: sql<number>`count(*)` }).from(users);
-
-		return NextResponse.json(
-			{
-				ok: true,
-				env: envCheck,
-				database: {
-					connected: true,
-					userCount: Number(userCount?.[0]?.count ?? 0),
-				},
-			},
-			{ status: 200 },
-		);
-	} catch (error) {
-		console.error("[api/health] error:", error);
-		return NextResponse.json({ ok: false, error: "Internal Server Error" }, { status: 500 });
+		dbConnected = true;
+	} catch (err: unknown) {
+		console.error("[api/health] db connect error:", err);
+		dbError = "db-connect-failed";
 	}
+
+	if (dbConnected) {
+		try {
+			const rows = await db.select({ count: sql<number>`count(*)` }).from(users);
+			countValue = Number(rows?.[0]?.count ?? 0);
+		} catch (err: unknown) {
+			console.error("[api/health] db query error:", err);
+			dbError = "db-query-failed";
+		}
+	}
+
+	return NextResponse.json(
+		{
+			ok: dbConnected && !dbError,
+			env: envCheck,
+			database: {
+				connected: dbConnected,
+				error: dbError,
+				userCount: countValue,
+			},
+		},
+		{ status: 200 },
+	);
 }
 
 
