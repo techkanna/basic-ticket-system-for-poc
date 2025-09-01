@@ -18,6 +18,7 @@ export async function GET() {
 
 	let dbConnected = false;
 	let dbError: string | null = null;
+	let dbErrorInfo: { name?: string; code?: string; message?: string } | null = null;
 	let countValue: number | null = null;
 
 	try {
@@ -26,6 +27,14 @@ export async function GET() {
 	} catch (err: unknown) {
 		console.error("[api/health] db connect error:", err);
 		dbError = "db-connect-failed";
+		if (err && typeof err === "object") {
+			const anyErr = err as any;
+			dbErrorInfo = {
+				name: anyErr?.name,
+				code: anyErr?.code,
+				message: String(anyErr?.message ?? "").slice(0, 300),
+			};
+		}
 	}
 
 	if (dbConnected) {
@@ -35,6 +44,14 @@ export async function GET() {
 		} catch (err: unknown) {
 			console.error("[api/health] db query error:", err);
 			dbError = "db-query-failed";
+			if (err && typeof err === "object") {
+				const anyErr = err as any;
+				dbErrorInfo = {
+					name: anyErr?.name,
+					code: anyErr?.code,
+					message: String(anyErr?.message ?? "").slice(0, 300),
+				};
+			}
 		}
 	}
 
@@ -45,6 +62,7 @@ export async function GET() {
 			database: {
 				connected: dbConnected,
 				error: dbError,
+				errorInfo: dbErrorInfo,
 				userCount: countValue,
 			},
 		},
