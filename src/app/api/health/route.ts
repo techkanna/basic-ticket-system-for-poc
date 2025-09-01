@@ -28,11 +28,11 @@ export async function GET() {
 		console.error("[api/health] db connect error:", err);
 		dbError = "db-connect-failed";
 		if (err && typeof err === "object") {
-			const anyErr = err as any;
+			const { name, code, message } = err as { name?: string; code?: string; message?: unknown };
 			dbErrorInfo = {
-				name: anyErr?.name,
-				code: anyErr?.code,
-				message: String(anyErr?.message ?? "").slice(0, 300),
+				name,
+				code,
+				message: String(message ?? "").slice(0, 300),
 			};
 		}
 	}
@@ -45,11 +45,11 @@ export async function GET() {
 			console.error("[api/health] db query error:", err);
 			dbError = "db-query-failed";
 			if (err && typeof err === "object") {
-				const anyErr = err as any;
+				const { name, code, message } = err as { name?: string; code?: string; message?: unknown };
 				dbErrorInfo = {
-					name: anyErr?.name,
-					code: anyErr?.code,
-					message: String(anyErr?.message ?? "").slice(0, 300),
+					name,
+					code,
+					message: String(message ?? "").slice(0, 300),
 				};
 			}
 		}
