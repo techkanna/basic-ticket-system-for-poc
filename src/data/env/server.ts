@@ -10,6 +10,8 @@ export const env = createEnv({
     DB_NAME: z.string().min(1),
     JWT_SECRET: z.string().min(1),
   },
+  // Allow CI/Docker builds to skip validation when secrets are not available at build time
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   createFinalSchema: env => {
     return z.object(env).transform(val => {
       const { DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER, ...rest } = val

@@ -8,13 +8,39 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies (for Drizzle CLI)
+        run: |
+          npm ci
+
+      - name: Generate migrations (Drizzle)
+        run: |
+          npm run db:generate
+
+      - name: Run migrations (Drizzle)
+        run: |
+          npm run db:migrate
+
       - name: Build Docker image
         run: |
-          docker build -t ticket-poc .
+          docker build \
+            --build-arg SKIP_ENV_VALIDATION=true \
+            -t ticket-poc .
 
       - name: Stop existing container (if any)
         run: |
@@ -22,13 +48,6 @@ jobs:
           docker rm ticket-poc || true
 
       - name: Run app container
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
         run: |
           docker run -d \
             --name ticket-poc \

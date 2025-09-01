@@ -21,6 +21,10 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
+# Allow skipping env validation during Docker build when secrets are only provided at runtime
+ARG SKIP_ENV_VALIDATION=true
+ENV SKIP_ENV_VALIDATION=$SKIP_ENV_VALIDATION
+
 RUN npm run build
 
 # Production image, copy all the files and run next
