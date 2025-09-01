@@ -10,11 +10,11 @@ jobs:
     runs-on: self-hosted
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_PASSWORD: password
+      DB_USER: postgress
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: ticket-system
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -53,12 +53,13 @@ jobs:
             --name ticket-poc \
             --restart unless-stopped \
             -p 3000:3000 \
+            --add-host=host.docker.internal:host-gateway \
             -e NODE_ENV=production \
             -e JWT_SECRET="$JWT_SECRET" \
             -e DB_PASSWORD="$DB_PASSWORD" \
             -e DB_USER="$DB_USER" \
-            -e DB_HOST="$DB_HOST" \
+            -e DB_HOST="host.docker.internal" \
             -e DB_PORT="$DB_PORT" \
             -e DB_NAME="$DB_NAME" \
-            -e DB_SSL=true \
+            -e DB_SSL=false \
             ticket-poc
