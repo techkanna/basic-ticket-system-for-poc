@@ -19,7 +19,7 @@ if (sslCa) {
 	sslOptions = { ...(sslOptions ?? {}), ca: sslCa } as TlsConnectionOptions;
 }
 
-const pool = new Pool({
+export const pool = new Pool({
 	connectionString: env.DATABASE_URL,
 	ssl: sslOptions,
 });

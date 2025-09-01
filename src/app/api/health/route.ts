@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db/client";
+import { db, pool } from "@/db/client";
 import { users } from "@/db/schema";
 import { sql } from "drizzle-orm";
 
@@ -22,8 +22,14 @@ export async function GET() {
 	let countValue: number | null = null;
 
 	try {
-		await db.execute(sql`select 1`);
-		dbConnected = true;
+		// Use raw pg for error codes/details
+		const client = await pool.connect();
+		try {
+			await client.query("select 1");
+			dbConnected = true;
+		} finally {
+			client.release();
+		}
 	} catch (err: unknown) {
 		console.error("[api/health] db connect error:", err);
 		dbError = "db-connect-failed";
