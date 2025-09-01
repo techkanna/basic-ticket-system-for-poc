@@ -8,27 +8,32 @@ import { eq } from "drizzle-orm";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-	const body = await request.json();
-	const email = String(body?.email ?? "").trim().toLowerCase();
-	const password = String(body?.password ?? "");
-	if (!email || !password) {
-		return NextResponse.json({ error: "email and password are required" }, { status: 400 });
-	}
+	try {
+		const body = await request.json();
+		const email = String(body?.email ?? "").trim().toLowerCase();
+		const password = String(body?.password ?? "");
+		if (!email || !password) {
+			return NextResponse.json({ error: "email and password are required" }, { status: 400 });
+		}
 
-	const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
-	const user = rows[0];
-	if (!user) {
-		return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-	}
-	const ok = await verifyPassword(password, user.passwordHash);
-	if (!ok) {
-		return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-	}
+		const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+		const user = rows[0];
+		if (!user) {
+			return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+		}
+		const ok = await verifyPassword(password, user.passwordHash);
+		if (!ok) {
+			return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+		}
 
-	const token = await createJwt({ sub: String(user.id), email: user.email, name: user.name });
-	const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email }, token });
-	res.cookies.set({ name: COOKIE_NAME, value: token, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 7 });
-	return res;
+		const token = await createJwt({ sub: String(user.id), email: user.email, name: user.name });
+		const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+		res.cookies.set({ name: COOKIE_NAME, value: token, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 7 });
+		return res;
+	} catch (error) {
+		console.error("[api/auth/login] Unhandled error:", error);
+		return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+	}
 }
 
 

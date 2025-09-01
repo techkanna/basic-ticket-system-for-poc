@@ -8,30 +8,35 @@ import { eq } from "drizzle-orm";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-	const body = await request.json();
-	const name = String(body?.name ?? "").trim();
-	const email = String(body?.email ?? "").trim().toLowerCase();
-	const password = String(body?.password ?? "");
-	if (!name || !email || !password) {
-		return NextResponse.json({ error: "name, email and password are required" }, { status: 400 });
+	try {
+		const body = await request.json();
+		const name = String(body?.name ?? "").trim();
+		const email = String(body?.email ?? "").trim().toLowerCase();
+		const password = String(body?.password ?? "");
+		if (!name || !email || !password) {
+			return NextResponse.json({ error: "name, email and password are required" }, { status: 400 });
+		}
+
+		const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+		if (existing.length > 0) {
+			return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+		}
+
+		const passwordHash = await hashPassword(password);
+		const insertedRows = await db
+			.insert(users)
+			.values({ name, email, passwordHash })
+			.returning({ id: users.id, name: users.name, email: users.email });
+		const inserted = insertedRows[0]!;
+
+		const token = await createJwt({ sub: String(inserted.id), email: inserted.email, name: inserted.name });
+		const res = NextResponse.json({ user: { id: inserted.id, name: inserted.name, email: inserted.email }, token }, { status: 201 });
+		res.cookies.set({ name: COOKIE_NAME, value: token, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 7 });
+		return res;
+	} catch (error) {
+		console.error("[api/auth/register] Unhandled error:", error);
+		return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
 	}
-
-	const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
-	if (existing.length > 0) {
-		return NextResponse.json({ error: "Email already registered" }, { status: 409 });
-	}
-
-	const passwordHash = await hashPassword(password);
-	const insertedRows = await db
-		.insert(users)
-		.values({ name, email, passwordHash })
-		.returning({ id: users.id, name: users.name, email: users.email });
-	const inserted = insertedRows[0]!;
-
-	const token = await createJwt({ sub: String(inserted.id), email: inserted.email, name: inserted.name });
-	const res = NextResponse.json({ user: { id: inserted.id, name: inserted.name, email: inserted.email }, token }, { status: 201 });
-	res.cookies.set({ name: COOKIE_NAME, value: token, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24 * 7 });
-	return res;
 }
 
 
